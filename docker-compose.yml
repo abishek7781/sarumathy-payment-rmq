@@ -1,0 +1,22 @@
+version: '3'
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - '5672:5672'      # AMQP
+      - '15672:15672'    # Web UI
+
+  payment-service:
+    build: .
+    container_name: payment-service
+    ports:
+      - '3000:3000'
+    depends_on:
+      - rabbitmq
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb+srv://sarumathy-payment:Sarumathy%402001@ecommerce-payment.vdgowz4.mongodb.net/ecommerce?retryWrites=true&w=majority
+      - RABBITMQ_URL=amqp://rabbitmq
+
+
