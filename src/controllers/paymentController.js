@@ -1,49 +1,77 @@
 const Payment = require("../models/Payment");
 const { getChannel } = require("../config/rabbitmq");
 
-exports.initiatePayment = async (req, res) => {
+const createPayment = async (req, res) => {
   try {
     const { username, amount } = req.body;
-    const payment = await Payment.create({ username, amount });
-
-    // const channel = getChannel();
-    // channel.sendToQueue("payment_logs", Buffer.from(JSON.stringify(payment)));
+    const payment = await Payment.create(req.body);
     const channel = getChannel();
-  
-    const messageBuffer = Buffer.from(JSON.stringify(payment));
 
-    // ✅ Existing queue
+    const messageBuffer = Buffer.from(JSON.stringify({
+     
+      username: payment.username,
+      amount: payment.amount,
+      status: payment.status
+    }));
+
+    channel.sendToQueue("payments", messageBuffer, { persistent: true });
+    channel.assertQueue("payment_logs", { durable: false });
     channel.sendToQueue("payment_logs", messageBuffer);
 
-    // ✅ Additional queue for debug/monitoring
-    channel.assertQueue("payments", { durable: false });
-    channel.sendToQueue("payments", messageBuffer);
-    res.status(201).json({ message: "Payment successful", payment });
+    res.status(201).json({ 
+      message: "Payment created successfully", 
+      payment 
+    });
   } catch (err) {
-    res.status(500).json({ error: "Payment failed", detail: err.message });
+    res.status(500).json({ 
+      error: "Payment creation failed", 
+      detail: err.message 
+    });
   }
 };
 
-exports.getPayment = async (req, res) => {
+const getPayment = async (req, res) => {
   try {
     const payment = await Payment.findById(req.params.id);
-    if (!payment) return res.status(404).json({ message: "Not found" });
+    if (!payment) {
+      return res.status(404).json({ message: "Payment not found" });
+    }
     res.json(payment);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-exports.refundPayment = async (req, res) => {
+const refundPayment = async (req, res) => {
   try {
     const payment = await Payment.findById(req.params.id);
-    if (!payment) return res.status(404).json({ message: "Not found" });
+    if (!payment) {
+      return res.status(404).json({ message: "Payment not found" });
+    }
 
     payment.status = "Refunded";
     await payment.save();
-    res.json({ message: "Refund processed", payment });
+
+    const channel = getChannel();
+    channel.sendToQueue("refunds", 
+      Buffer.from(JSON.stringify({
+        username: payment.username,
+        amount: payment.amount,
+        timestamp: new Date()
+      }))
+    );
+
+    res.json({ 
+      message: "Refund processed successfully", 
+      payment 
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+module.exports = {
+  createPayment,
+  getPayment,
+  refundPayment
+};
