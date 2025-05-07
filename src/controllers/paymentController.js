@@ -3,7 +3,6 @@ const { getChannel } = require("../config/rabbitmq");
 
 const createPayment = async (req, res) => {
   try {
-    const { username, amount } = req.body;
     const payment = await Payment.create(req.body);
     const channel = getChannel();
 
