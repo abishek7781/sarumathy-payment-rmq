@@ -1,4 +1,5 @@
-require("dotenv").config();
+const environment = process.env.NODE_ENV || 'local';
+require('dotenv').config({ path: `.env.${environment}` });
 const express = require("express");
 const app = express();
 const connectDB = require("./config/db");
@@ -12,7 +13,7 @@ const start = async () => {
   await connectDB();
   await connectRabbitMQ();
 
-  const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 80;
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 };
 
