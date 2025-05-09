@@ -1,5 +1,5 @@
-const environment = process.env.NODE_ENV || 'local';
-require('dotenv').config({ path: `.env.${environment}` });
+// const environment = process.env.NODE_ENV || 'local';
+require('dotenv').config();
 const express = require("express");
 const app = express();
 const connectDB = require("./config/db");

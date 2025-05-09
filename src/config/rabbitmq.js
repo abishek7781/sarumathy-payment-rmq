@@ -1,5 +1,5 @@
 const amqp = require("amqplib");
-
+require('dotenv').config();
 let channel;
 
 const connectRabbitMQ = async () => {

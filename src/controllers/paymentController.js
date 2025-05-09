@@ -7,7 +7,6 @@ const createPayment = async (req, res) => {
     const channel = getChannel();
 
     const messageBuffer = Buffer.from(JSON.stringify({
-     
       username: payment.username,
       amount: payment.amount,
       status: payment.status
